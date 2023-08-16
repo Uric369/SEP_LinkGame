@@ -1,0 +1,48 @@
+<RCC>
+    <qresource prefix="/Entry">
+        <file>Entry_background.jpeg</file>
+        <file>Entry_background_2.jpg</file>
+    </qresource>
+    <qresource prefix="/MainWindow">
+        <file>MainWindow_Background.jpg</file>
+        <file>MainWindow_Background_2.jpg</file>
+    </qresource>
+    <qresource prefix="/Block">
+        <file>image/blocks/banana.png</file>
+        <file>image/blocks/cherry.png</file>
+        <file>image/blocks/eggplant.png</file>
+        <file>image/blocks/grapes.png</file>
+        <file>image/blocks/greenApple.png</file>
+        <file>image/blocks/mango.png</file>
+        <file>image/blocks/pear.png</file>
+        <file>image/blocks/pineapple.png</file>
+        <file>image/blocks/raspberry.png</file>
+        <file>image/blocks/redApple.png</file>
+        <file>image/blocks/strawberry.png</file>
+    </qresource>
+    <qresource prefix="/Block_near">
+        <file>image/blocks_near/raspberry.png</file>
+        <file>image/blocks_near/greenApple.PNG</file>
+        <file>image/blocks_near/banana.PNG</file>
+        <file>image/blocks_near/cherry.PNG</file>
+        <file>image/blocks_near/eggplant.PNG</file>
+        <file>image/blocks_near/grapes.PNG</file>
+        <file>image/blocks_near/mango.PNG</file>
+        <file>image/blocks_near/pear.PNG</file>
+        <file>image/blocks_near/pineapple.PNG</file>
+        <file>image/blocks_near/redApple.PNG</file>
+        <file>image/blocks_near/strawberry.PNG</file>
+    </qresource>
+    <qresource prefix="/Character">
+        <file>image/character/brownDog.PNG</file>
+        <file>image/character/greenDog.PNG</file>
+        <file>image/character/whiteDog.PNG</file>
+        <file>image/character/whiteDogwithLight.PNG</file>
+    </qresource>
+    <qresource prefix="/Block_select">
+        <file>image/blocks_select/GIF.gif</file>
+    </qresource>
+    <qresource prefix="/Effect">
+        <file>image/effect/explode.gif</file>
+    </qresource>
+</RCC>
