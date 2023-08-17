@@ -46,7 +46,8 @@ void Block::near() {
 }
 
 bool Block::select() {
-    QString gifPath = ":/Block_select/image/blocks_select/GIF.gif"; // 替换为你的GIF动图路径
+    if (this->state != State::near) return false;
+    QString gifPath = ":/Block_select/image/blocks_select/strawberry.gif"; // 替换为你的GIF动图路径
     QMovie* movie = new QMovie(gifPath);
     movie->setCacheMode(QMovie::CacheAll);
     movie->setScaledSize(QSize(BLOCK_SIZE, BLOCK_SIZE));

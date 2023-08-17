@@ -18,14 +18,25 @@ MainWindow::MainWindow(QWidget* parent) : QGraphicsView(parent) {
     scene->setBackgroundBrush(background);
     scene->setSceneRect(0, 0, screenWidth, screenHeight);
 
+    bgm = new QSoundEffect(this);
+    bgm->setLoopCount(QSoundEffect::Infinite); // 设置为无限循环
+    bgm->setSource(QUrl::fromLocalFile(":/Sound/sounds/bgm.wav"));
+    bgm->play();
+
+    effect = new Effect(this);
+    // 创建倒计时
+    countDownClock = new CountDownClock(this);
+
+
     linkPair[0] = nullptr;
     linkPair[1] = nullptr;
+
 
     //生成所有方块
     createMap(scene);
 
     // 创建角色
-    Character* character = new Character();
+    character = new Character();
     scene->addItem(character);
 
     // 将场景设置到视图中
@@ -40,7 +51,7 @@ void MainWindow::createMap(QGraphicsScene* scene) {
     int typeMap[NUM_HORIZONTAL_BLOCKS][NUM_VERTICAL_BLOCKS];
     for (int i = 0; i < NUM_HORIZONTAL_BLOCKS; i++) {
         for (int j = 0; j < NUM_VERTICAL_BLOCKS; j++){
-            typeMap[i][j] = (i * NUM_HORIZONTAL_BLOCKS + j) % 10;
+            typeMap[i][j] = (i * NUM_HORIZONTAL_BLOCKS + j) % NUM_BLOCK_TYPE;
         }
     }
 
@@ -65,6 +76,32 @@ void MainWindow::createMap(QGraphicsScene* scene) {
             blockMap[i][j] = block;
             scene->addItem(block);
         }
+    }
+
+    int y_top = Y_OFFSET - BLOCK_INTERVAL;
+    int y_bottom = Y_OFFSET + NUM_VERTICAL_BLOCKS * BLOCK_INTERVAL;
+    int x_top = X_OFFSET - BLOCK_INTERVAL;
+    int x_bottom = X_OFFSET + NUM_HORIZONTAL_BLOCKS * BLOCK_INTERVAL;
+    for (int i = -1; i <= NUM_HORIZONTAL_BLOCKS; i++) {
+        QGraphicsRectItem* rectItem1 = new QGraphicsRectItem(X_OFFSET + i * BLOCK_INTERVAL, y_top, BLOCK_SIZE, BLOCK_SIZE);
+        QGraphicsRectItem* rectItem2 = new QGraphicsRectItem(X_OFFSET + i * BLOCK_INTERVAL, y_bottom, BLOCK_SIZE, BLOCK_SIZE);
+        QBrush brush(QColor(255, 255, 255, 128));  // 设置白色的半透明颜色
+        rectItem1->setBrush(brush);
+        rectItem2->setBrush(brush);
+
+        scene->addItem(rectItem1);
+        scene->addItem(rectItem2);
+    }
+
+    for (int i = 0; i < NUM_VERTICAL_BLOCKS; i++) {
+        QGraphicsRectItem* rectItem1 = new QGraphicsRectItem(x_top, Y_OFFSET + i * BLOCK_INTERVAL, BLOCK_SIZE, BLOCK_SIZE);
+        QGraphicsRectItem* rectItem2 = new QGraphicsRectItem(x_bottom, Y_OFFSET + i * BLOCK_INTERVAL, BLOCK_SIZE, BLOCK_SIZE);
+        QBrush brush(QColor(255, 255, 255, 128));  // 设置白色的半透明颜色
+        rectItem1->setBrush(brush);
+        rectItem2->setBrush(brush);
+
+        scene->addItem(rectItem1);
+        scene->addItem(rectItem2);
     }
 }
 
@@ -187,8 +224,12 @@ void MainWindow::linkBlock(int x, int y) {
 
         linkPair[0]->link();
         linkPair[1]->link();
+        linkEffect();
+        effect->excellentEffect();
 
         QTimer::singleShot(300, [=]() {
+            eraseLinkEffect();
+
             blockMap[linkPair[0]->getX()][linkPair[0]->getY()] = nullptr;
             blockMap[linkPair[1]->getX()][linkPair[1]->getY()] = nullptr;
 
@@ -206,13 +247,156 @@ void MainWindow::linkBlock(int x, int y) {
         std::cout<<"fail"<<std::endl;
         linkPair[0]->resetFromSelect();
         linkPair[1]->resetFromSelect();
+        nearBlocks(character->getX(), character->getY());
+        effect->missEffect();
 
         linkPair[0] = nullptr;
         linkPair[1] = nullptr;
     }
 }
 
+void MainWindow::linkEffect() {
+    if (linkPath.size() < 2) {
+        // 链接路径上的点不足两个，无法绘制直线
+        return;
+    }
+
+    QGraphicsScene* scene = this->scene;
+    QPen linePen(QColor(101, 198, 254));  // 可以根据需要更改线条颜色和样式
+    linePen.setWidth(4);
+
+    for (size_t i = 0; i < linkPath.size() - 1; ++i) {
+        int x1 = X_OFFSET + linkPath[i].first * BLOCK_INTERVAL + BLOCK_SIZE / 2;
+        int y1 = Y_OFFSET + linkPath[i].second * BLOCK_INTERVAL + BLOCK_SIZE / 2;
+        int x2 = X_OFFSET + linkPath[i + 1].first * BLOCK_INTERVAL + BLOCK_SIZE / 2;
+        int y2 = Y_OFFSET + linkPath[i + 1].second * BLOCK_INTERVAL + BLOCK_SIZE / 2;
+
+        scene->addLine(x1, y1, x2, y2, linePen);
+    }
+}
+
+void MainWindow::eraseLinkEffect() {
+    QList<QGraphicsItem*> items = scene->items();
+
+    for (QGraphicsItem* item : items) {
+        if (item->type() == QGraphicsLineItem::Type) {
+            scene->removeItem(item);
+            delete item;
+        }
+    }
+}
+
 bool MainWindow::isLinkable() {
     if (linkPair[0]->getType() != linkPair[1]->getType()) return false;
-    return true;
+
+    int x1 = linkPair[0]->getX();
+    int y1 = linkPair[0]->getY();
+    int x2 = linkPair[1]->getX();
+    int y2 = linkPair[1]->getY();
+
+    if (isLinkable_zeroAngle(x1, y1, x2, y2, true, false) ||
+    isLinkable_oneAngle(x1, y1, x2, y2) ||
+    isLinkable_twoAngle(x1, y1, x2, y2)) return true;
+
+    return false;
 }
+
+bool MainWindow::isLinkable_zeroAngle(int x1, int y1, int x2, int y2, bool isDirect, bool examEndPoint) {
+    if (x1 != x2 && y1 != y2) return false;
+    if (examEndPoint && x2 >= 0 && x2 < NUM_HORIZONTAL_BLOCKS && y2 >= 0
+    && y2 <NUM_VERTICAL_BLOCKS && blockMap[x2][y2]) return false;
+
+    if (x1 == x2) {
+        if (x1 == -1 || x1 == NUM_HORIZONTAL_BLOCKS) return true;
+        for (int i = std::min(y1, y2) + 1; i < std::max(y1, y2); i++){
+            if (blockMap[x1][i]) return false;
+        }
+        if (isDirect) {
+            linkPath.clear();
+            linkPath.push_back(std::make_pair(x1, y1));
+            linkPath.push_back(std::make_pair(x2, y2));
+            std::cout<<"isLinkable_zeroAngle"<<std::endl;
+            std::cout<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<std::endl;
+        }
+        return true;
+    }
+
+    if (y1 == y2) {
+        if (y1 == -1 || y1 == NUM_VERTICAL_BLOCKS) return true;
+        for (int i = std::min(x1, x2) + 1; i < std::max(x1, x2); i++){
+            if (blockMap[i][y1]) return false;
+        }
+        if (isDirect) {
+            linkPath.clear();
+            linkPath.push_back(std::make_pair(x1, y1));
+            linkPath.push_back(std::make_pair(x2, y2));
+            std::cout<<"isLinkable_zeroAngle"<<std::endl;
+            std::cout<<x1<<" "<<y1<<" "<<x2<<" "<<y2<<std::endl;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+bool MainWindow::isLinkable_oneAngle(int x1, int y1, int x2, int y2) {
+    if (x1 == x2 || y1 == y2) return false;
+
+    if (isLinkable_zeroAngle(x1, y1, x2, y1, false, true) && isLinkable_zeroAngle(x2, y1, x2, y2, false, false)) {
+        linkPath.clear();
+        linkPath.push_back(std::make_pair(x1, y1));
+        linkPath.push_back(std::make_pair(x2, y1));
+        linkPath.push_back(std::make_pair(x2, y2));
+        std::cout<<"isLinkable_oneAngle"<<std::endl;
+        std::cout<<x1<<" "<<y1<<" "<<x2<<" "<<y1<<" "<<x2<<" "<<y2<<std::endl;
+        return true;
+    }
+
+    if (isLinkable_zeroAngle(x1, y1, x1, y2, false, true) && isLinkable_zeroAngle(x1, y2, x2, y2, false, false)) {
+        linkPath.clear();
+        linkPath.push_back(std::make_pair(x1, y1));
+        linkPath.push_back(std::make_pair(x1, y2));
+        linkPath.push_back(std::make_pair(x2, y2));
+        std::cout<<"isLinkable_oneAngle"<<std::endl;
+        std::cout<<x1<<" "<<y1<<" "<<x1<<" "<<y2<<" "<<x2<<" "<<y2<<std::endl;
+        return true;
+    }
+
+    return false;
+}
+
+bool MainWindow::isLinkable_twoAngle(int x1, int y1, int x2, int y2) {
+    //借道x = -1
+    for (int i = -1; i <= NUM_HORIZONTAL_BLOCKS; i++) {
+        if (isLinkable_zeroAngle(x1, y1, i, y1, false, true) &&
+        isLinkable_zeroAngle(i, y1, i, y2, false, true) &&
+        isLinkable_zeroAngle(i, y2, x2, y2, false, false)) {
+            linkPath.clear();
+            linkPath.push_back(std::make_pair(x1, y1));
+            linkPath.push_back(std::make_pair(i, y1));
+            linkPath.push_back(std::make_pair(i, y2));
+            linkPath.push_back(std::make_pair(x2, y2));
+            std::cout<<"isLinkable_twoAngle"<<std::endl;
+            std::cout<<x1<<" "<<y1<<" "<<i<<" "<<y1<<" "<<i<<" "<<y2<<" "<<x2<<" "<<y2<<std::endl;
+            return true;
+        }
+    }
+
+    for (int i = -1; i <= NUM_VERTICAL_BLOCKS; i++) {
+        if (isLinkable_zeroAngle(x1, y1, x1, i, false, true) &&
+        isLinkable_zeroAngle(x1, i, x2, i, false, true) &&
+        isLinkable_zeroAngle(x2, i, x2, y2, false, false)) {
+            linkPath.clear();
+            linkPath.push_back(std::make_pair(x1, y1));
+            linkPath.push_back(std::make_pair(x1, i));
+            linkPath.push_back(std::make_pair(x2, i));
+            linkPath.push_back(std::make_pair(x2, y2));
+            std::cout<<"isLinkable_twoAngle"<<std::endl;
+            std::cout<<x1<<" "<<y1<<" "<<x1<<" "<<i<<" "<<x2<<" "<<i<<" "<<x2<<" "<<y2<<std::endl;
+            return true;
+        }
+    }
+
+    return false;
+}
+

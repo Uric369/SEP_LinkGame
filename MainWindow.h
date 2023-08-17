@@ -13,6 +13,14 @@
 #include "Config.h"
 #include <chrono>
 #include <thread>
+#include <algorithm>
+#include <QLabel>
+#include <QMovie>
+#include <QSound>
+#include <QSoundEffect>
+#include "Effect.h"
+#include "CountDownClock.h"
+
 
 class MainWindow : public QGraphicsView {
 public:
@@ -20,8 +28,13 @@ public:
 
 private:
     QGraphicsScene* scene;
+    QSoundEffect* bgm;
+    Effect* effect;
+    Character* character;
+    CountDownClock* countDownClock;
     std::vector<std::vector<Block*>> blockMap;
     Block* linkPair[2];
+    std::vector<std::pair<int, int>> linkPath;
 
     void createMap(QGraphicsScene* scene);
 
@@ -35,6 +48,12 @@ private:
 
     void linkBlock(int x, int y);
     bool isLinkable();
+    bool isLinkable_zeroAngle(int x1, int y1, int x2, int y2, bool isDirect, bool examEndPoint);
+    bool isLinkable_oneAngle(int x1, int y1, int x2, int y2);
+    bool isLinkable_twoAngle(int x1, int y1, int x2, int y2);
+
+    void linkEffect();
+    void eraseLinkEffect();
 };
 
 #endif // MAINWINDOW_H

@@ -41,8 +41,20 @@
     </qresource>
     <qresource prefix="/Block_select">
         <file>image/blocks_select/GIF.gif</file>
+        <file>image/blocks_select/pear.gif</file>
+        <file>image/blocks_select/pear2.gif</file>
+        <file>image/blocks_select/strawberry.gif</file>
     </qresource>
     <qresource prefix="/Effect">
         <file>image/effect/explode.gif</file>
+        <file>image/effect/excellent.png</file>
+        <file>image/effect/miss.png</file>
+    </qresource>
+    <qresource prefix="/Sound">
+        <file>sounds/excellent.wav</file>
+        <file>sounds/bgm.wav</file>
+        <file>sounds/miss.wav</file>
+        <file>sounds/miss2.wav</file>
+        <file>sounds/miss3.mp3</file>
     </qresource>
 </RCC>
