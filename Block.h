@@ -50,19 +50,22 @@ enum State {
 
 class Block : public QGraphicsPixmapItem {
 public:
-    Block(int x, int y, int type);
+    Block(int x = 0, int y = 0, int type = 0, bool isMultiPlayer = false);
     void reset();
     void resetFromSelect();
     void near();
     bool select();
+    void selectByHint();
     void link();
     int getType();
     int getX();
     int getY();
+    void setNewPos(int x, int y);
 
 private:
     int x, y;
     int type;
+    bool isMultiPlayer;
     State state;
     QGraphicsProxyWidget* proxyWidget;
 };

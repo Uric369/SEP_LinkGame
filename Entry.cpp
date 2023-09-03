@@ -9,12 +9,28 @@ Entry::Entry(QWidget *parent) : QWidget(parent) {
 
     resize(screenWidth, screenHeight);
 
+    int x = (screenWidth - BUTTON_WIDTH) / 2;
+
+    Button *singlePlayer = new Button(x, ENTRY_BUTTON_Y_OFFEST, 2, this);
+    Button *twoPlayer = new Button(x, ENTRY_BUTTON_Y_OFFEST + ENTRY_BUTTON_GAP, 3, this);
+    Button *loadGame = new Button(x, ENTRY_BUTTON_Y_OFFEST + 2 *ENTRY_BUTTON_GAP, 4, this);
+    Button *exitGame = new Button(x, ENTRY_BUTTON_Y_OFFEST + 3 *ENTRY_BUTTON_GAP, 5, this);
+    connect(singlePlayer, &QPushButton::clicked, this, &Entry::singlePlayerMode);
+    connect(twoPlayer, &QPushButton::clicked, this, &Entry::twoPlayerMode);
+    connect(loadGame, &QPushButton::clicked, this, &Entry::loadGameMode);
+    connect(exitGame, &QPushButton::clicked, this, &Entry::exit);
+
     initializeComponents();
+
+    bgm = new QSoundEffect(this);
+    bgm->setLoopCount(QSoundEffect::Infinite); // 设置为无限循环
+    bgm->setSource(QUrl::fromLocalFile(":/Sound/sounds/entry.wav"));
+    bgm->play();
 }
 
 void Entry::initializeComponents() {
     // 设置背景图片
-    QPixmap backgroundImage(":/Entry/Entry_background_2.jpg");
+    QPixmap backgroundImage(":/Entry/image/entry.jpg");
 
     // 调整背景图片的缩放模式为按比例缩放，并且保持纵横比例不变
     backgroundImage = backgroundImage.scaled(this->size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
@@ -22,23 +38,31 @@ void Entry::initializeComponents() {
     QPalette palette;
     palette.setBrush(this->backgroundRole(), QBrush(backgroundImage));
     this->setPalette(palette);
-
-    titleLabel = new QLabel(this);
-    titleLabel->setText("连连看");
-    titleLabel->setAlignment(Qt::AlignCenter);
-    titleLabel->setFont(QFont("Arial", 30));
-    titleLabel->setGeometry(width() / 2 - 100, height() / 2 - 300, 200, 50);
-
-    startButton = new QPushButton("开始游戏", this);
-    startButton->setGeometry(width() / 2 - 200, height() / 2 - 60, 400, 120); // 居中设置开始游戏按钮位置
-    startButton->setStyleSheet("font-size: 50px"); // 设置字体大小为 24 像素
-    startButton->setStyleSheet("QPushButton:hover { background-color: yellow; } QPushButton:pressed { background-color: green; }");
-
-    connect(startButton, &QPushButton::clicked, this, &Entry::startGame);
 }
 
-void Entry::startGame() {
+void Entry::singlePlayerMode() {
+    bgm->stop();
     MainWindow *m = new MainWindow();
     m->show();
     this->hide();
 }
+
+void Entry::twoPlayerMode() {
+    bgm->stop();
+    MainWindow_m *m = new MainWindow_m();
+    m->show();
+    this->hide();
+}
+
+void Entry::loadGameMode() {
+    bgm->stop();
+    MainWindow_m *m = new MainWindow_m();
+    m->show();
+    this->hide();
+}
+
+void Entry::exit() {
+    bgm->stop();
+    this->hide();
+}
+

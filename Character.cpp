@@ -2,17 +2,19 @@
 #include <QPixmap>
 #include <QKeyEvent>
 
-Character::Character(QGraphicsItem *parent) : QGraphicsPixmapItem(parent), x(-1), y(-1) {
-    QPixmap pixmap(":/Character/image/character/whiteDog.PNG");
+Character::Character(QGraphicsItem *parent, int x, int y, int type, bool isMultiPlayer) : QGraphicsPixmapItem(parent), x(x), y(y), type(type), isMultiPlayer(isMultiPlayer) {
+    QPixmap pixmap(characterImages[type]);
     pixmap = pixmap.scaled(BLOCK_SIZE, BLOCK_SIZE);
 
     setPixmap(pixmap);
-    setPos(X_OFFSET + x * BLOCK_INTERVAL, Y_OFFSET + y * BLOCK_INTERVAL);
+    if (!isMultiPlayer) setPos(X_OFFSET + x * BLOCK_INTERVAL, Y_OFFSET + y * BLOCK_INTERVAL);
+    else setPos(X_OFFSET_MULTI + x * BLOCK_INTERVAL, Y_OFFSET_MULTI + y * BLOCK_INTERVAL);
 }
 
 void Character::keyPressEvent(QKeyEvent *event) {
     int dx = 0;
     int dy = 0;
+//    std::cout<<"here3"<<std::endl;
 
     // Check pressed key or arrow key
     switch (event->key()) {
@@ -56,7 +58,8 @@ void Character::moveCharacter(int dx, int dy) {
     else if (y > NUM_VERTICAL_BLOCKS)
         y = -1;
 
-    setPos(X_OFFSET + x * BLOCK_INTERVAL, Y_OFFSET + y * BLOCK_INTERVAL);
+    if (!isMultiPlayer) setPos(X_OFFSET + x * BLOCK_INTERVAL, Y_OFFSET + y * BLOCK_INTERVAL);
+    else setPos(X_OFFSET_MULTI + x * BLOCK_INTERVAL, Y_OFFSET_MULTI + y * BLOCK_INTERVAL);
 }
 
 int Character::getX() {

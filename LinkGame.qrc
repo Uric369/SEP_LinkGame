@@ -2,6 +2,7 @@
     <qresource prefix="/Entry">
         <file>Entry_background.jpeg</file>
         <file>Entry_background_2.jpg</file>
+        <file>image/entry.jpg</file>
     </qresource>
     <qresource prefix="/MainWindow">
         <file>MainWindow_Background.jpg</file>
@@ -49,6 +50,10 @@
         <file>image/effect/explode.gif</file>
         <file>image/effect/excellent.png</file>
         <file>image/effect/miss.png</file>
+        <file>image/effect/failGame.png</file>
+        <file>image/effect/winGame.png</file>
+        <file>image/effect/scoreBoard.jpg</file>
+        <file>image/effect/winGame_player.jpeg</file>
     </qresource>
     <qresource prefix="/Sound">
         <file>sounds/excellent.wav</file>
@@ -56,5 +61,24 @@
         <file>sounds/miss.wav</file>
         <file>sounds/miss2.wav</file>
         <file>sounds/miss3.mp3</file>
+        <file>sounds/lose.wav</file>
+        <file>sounds/win.wav</file>
+        <file>sounds/triggerProps.wav</file>
+        <file>sounds/entry.wav</file>
+    </qresource>
+    <qresource prefix="/Button">
+        <file>image/button/pause.png</file>
+        <file>image/button/restart.png</file>
+        <file>image/button/danren.png</file>
+        <file>image/button/exit.png</file>
+        <file>image/button/load.png</file>
+        <file>image/button/shuangren.png</file>
+    </qresource>
+    <qresource prefix="/Prop">
+        <file>image/props/+1s.PNG</file>
+        <file>image/props/flash.PNG</file>
+        <file>image/props/hint.PNG</file>
+        <file>image/props/shuffle.PNG</file>
+        <file>image/props/triggerProps.gif</file>
     </qresource>
 </RCC>

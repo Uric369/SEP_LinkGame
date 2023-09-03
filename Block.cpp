@@ -1,11 +1,12 @@
 #include "Block.h"
 
-Block::Block(int x, int y, int type) : QGraphicsPixmapItem(), x(x), y(y), type(type), state(State::normal), proxyWidget(nullptr) {
+Block::Block(int x, int y, int type, bool isMultiPlayer) : QGraphicsPixmapItem(), x(x), y(y), type(type), state(State::normal), proxyWidget(nullptr), isMultiPlayer(isMultiPlayer) {
     QPixmap pixmap(images[type]);
     pixmap = pixmap.scaled(BLOCK_SIZE, BLOCK_SIZE);
 
     setPixmap(pixmap);
-    setPos(X_OFFSET + x * BLOCK_INTERVAL, Y_OFFSET + y * BLOCK_INTERVAL);
+    if (!isMultiPlayer) setPos(X_OFFSET + x * BLOCK_INTERVAL, Y_OFFSET + y * BLOCK_INTERVAL);
+    else setPos(X_OFFSET_MULTI + x * BLOCK_INTERVAL, Y_OFFSET_MULTI + y * BLOCK_INTERVAL);
 }
 
 void Block::reset() {
@@ -66,6 +67,11 @@ bool Block::select() {
     return true;
 }
 
+void Block::selectByHint() {
+    this->state = State::near;
+    select();
+}
+
 void Block::link() {
     if (this->state != State::selected) return;
 
@@ -83,6 +89,13 @@ void Block::link() {
     proxyWidget->setPos(proxyWidget->pos().x() + EXPLODE_OFFSET, proxyWidget->pos().y() + EXPLODE_OFFSET);
 
     movie->start();
+}
+
+void Block::setNewPos(int x, int y) {
+    this->x = x;
+    this->y = y;
+    if (!isMultiPlayer) setPos(X_OFFSET + x * BLOCK_INTERVAL, Y_OFFSET + y * BLOCK_INTERVAL);
+    else setPos(X_OFFSET_MULTI + x * BLOCK_INTERVAL, Y_OFFSET_MULTI + y * BLOCK_INTERVAL);
 }
 
 int Block::getType() {

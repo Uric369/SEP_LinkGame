@@ -8,7 +8,9 @@
 #include <QPainter>
 #include <QDesktopWidget>
 #include "MainWindow.h"
+#include "MainWindow_multiplayer.h"
 #include "Block.h"
+#include "Button.h"
 
 class Entry : public QWidget {
 public:
@@ -16,10 +18,17 @@ public:
 
 private:
     QLabel *titleLabel;
-    QPushButton *startButton;
+    Button *singlePlayer;
+    Button *twoPlayer;
+    Button *loadGame;
+    Button *exitGame;
+    QSoundEffect* bgm;
 
     void initializeComponents();
-    void startGame();
+    void singlePlayerMode();
+    void twoPlayerMode();
+    void loadGameMode();
+    void exit();
 
 };
 

@@ -1,7 +1,6 @@
 #include "CountDownClock.h"
 
-CountDownClock::CountDownClock(QWidget *parent) : QWidget(parent), seconds(0)
-{
+CountDownClock::CountDownClock(QWidget *parent) : QWidget(parent), seconds(0), isPaused(false) {
     timer = new QTimer(parent);
     connect(timer, &QTimer::timeout, this, &CountDownClock::updateSeconds);
     timer->start(1000); // 每隔1秒触发一次计时器
@@ -9,7 +8,8 @@ CountDownClock::CountDownClock(QWidget *parent) : QWidget(parent), seconds(0)
     label = new QLabel(this);
     label->setAlignment(Qt::AlignCenter);
     label->setStyleSheet("font-size: 96px; color: white;");
-    label->setGeometry(rect().center().x() + 50, rect().center().y() + 80, 100, 100);
+//    label->setGeometry(rect().center().x() + 50, rect().center().y() + 80, 100, 100);
+    label->setGeometry(rect().center().x() + 30, rect().center().y() + 60, 140, 140);
 
     setGeometry(CLOCK_X_OFFSET, CLOCK_Y_OFFSET, CLOCK_SIZE, CLOCK_SIZE);
 }
@@ -21,12 +21,14 @@ void CountDownClock::paintEvent(QPaintEvent *event) {
     painter.setRenderHint(QPainter::Antialiasing, true);
 
     // 绘制外边框圆环
-    QColor borderColor(Qt::yellow);
-    painter.setPen(QPen(borderColor, ANNULUS_THICKNESS));
+    painter.setPen(QPen(QColor(236, 111, 116), ANNULUS_THICKNESS / 2));
     painter.drawEllipse(rect().center(), CLOCK_EXRADIUS - ANNULUS_THICKNESS / 2, CLOCK_EXRADIUS - ANNULUS_THICKNESS / 2);
 
+    painter.setPen(QPen(QColor(198, 49, 63), ANNULUS_THICKNESS / 2));
+    painter.drawEllipse(rect().center(), CLOCK_EXRADIUS - ANNULUS_THICKNESS, CLOCK_EXRADIUS - ANNULUS_THICKNESS);
+
     // 绘制内部填充圆环
-    QColor fillColor(Qt::blue); // 这里用蓝色作为填充颜色，你可以根据需要修改
+    QColor fillColor(QColor(255, 255, 255, 200));
     painter.setPen(Qt::NoPen);
     painter.setBrush(fillColor);
 
@@ -41,13 +43,32 @@ void CountDownClock::paintEvent(QPaintEvent *event) {
     // 绘制倒计时秒数
     QString text = QString::number(COUNTDOWN_TIME - seconds);
     label->setText(text);
+    label->setStyleSheet("font-size: 96px; color: black;");
 }
 
 void CountDownClock::updateSeconds() {
-    seconds++;
-    if (seconds > COUNTDOWN_TIME)
+    if (!isPaused) seconds++;
+    if (!isPaused && seconds >= COUNTDOWN_TIME)
     {
         timer->stop();
+        emit countdownFinished(); // Emit the countdownFinished() signal
+        return;
     }
     update(); // 触发重绘事件，更新界面
+}
+
+void CountDownClock::countdownFinished() {
+    std::cout<<"SIGNAL: countdownFinished"<<std::endl;
+}
+
+void CountDownClock::toggleCountDown() {
+    isPaused = !isPaused;
+}
+
+void CountDownClock::stopCountDown() {
+    isPaused = true;
+}
+
+void CountDownClock::addTime() {
+    this->seconds -= ADD_TIME;
 }
