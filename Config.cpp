@@ -55,5 +55,4 @@ const QString characterImages[2]= {
     ":/Character/image/character/brownDog.PNG",
 };
 
-
-const QString savePath = "";
+const std::string savePath = "C:/coding/SEP-QT/LinkGame.txt";

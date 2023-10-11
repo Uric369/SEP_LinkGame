@@ -1,6 +1,6 @@
 #include "MainWindow.h"
 
-MainWindow::MainWindow(QWidget* parent) : QGraphicsView(parent) {
+MainWindow::MainWindow(QWidget* parent, bool isResume) : QGraphicsView(parent) {
     setWindowTitle("Main Window");
 
     QDesktopWidget *desktop = QApplication::desktop();
@@ -24,17 +24,48 @@ MainWindow::MainWindow(QWidget* parent) : QGraphicsView(parent) {
     bgm->play();
 
     effect = new Effect(this);
-    // 创建倒计时
-    countDownClock = new CountDownClock(this);
-    connect(countDownClock, SIGNAL(countdownFinished()), this, SLOT(this->handleCountdownFinished()));
 
+    if (isResume) loadGame();
+    else {
+    //生成所有方块
+    createMap(scene);
+    createCharacter(scene);
+    createComponents();}
+
+    // 将场景设置到视图中
+    setScene(scene);
+
+    // 将主窗口设置为焦点，以便接收键盘事件
+    setFocus();
+}
+
+void MainWindow::createComponents() {
+    residue = NUM_HORIZONTAL_BLOCKS * NUM_VERTICAL_BLOCKS;
+    seconds = 0;
+    isPaused = false;
+    isSaved = false;
     linkPair[0] = nullptr;
     linkPair[1] = nullptr;
 
+    timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &MainWindow::updateSeconds);
+    timer->start(1000); // 每隔1秒触发一次计时器
 
-    //生成所有方块
-    createMap(scene);
+    pauseButton = new Button(BUTTON_X_OFFSET, BUTTON_Y_OFFSET, 0, this);
+    connect(pauseButton, &QPushButton::clicked, this, &MainWindow::pauseGame);
 
+    saveButton = new Button(BUTTON_X_OFFSET, BUTTON_Y_OFFSET + 200, 1, this);
+    connect(saveButton, &QPushButton::clicked, this, &MainWindow::saveGame);
+
+    countDownClock = new CountDownClock(this);
+    connect(countDownClock, SIGNAL(countdownFinished()), this, SLOT(this->handleCountdownFinished()));
+
+    scoreboard = new ScoreBoard();
+    scoreboard->setScore(0);
+    scene->addItem(scoreboard);
+}
+
+void MainWindow::createCharacter(QGraphicsScene* scene) {
     // 创建角色
     srand(static_cast<unsigned>(time(0)));
     int seed1 = rand() % 4;
@@ -53,26 +84,6 @@ MainWindow::MainWindow(QWidget* parent) : QGraphicsView(parent) {
 //        std::cout<<"seeeeeeeeeeed2"<<seed2<<std::endl;
     }
     scene->addItem(character);
-
-    // 将场景设置到视图中
-    setScene(scene);
-
-    // 将主窗口设置为焦点，以便接收键盘事件
-    setFocus();
-
-    residue = NUM_HORIZONTAL_BLOCKS * NUM_VERTICAL_BLOCKS;
-
-    timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &MainWindow::updateSeconds);
-    timer->start(1000); // 每隔1秒触发一次计时器
-    seconds = 0;
-    isPaused = false;
-
-    pauseButton = new Button(BUTTON_X_OFFSET, BUTTON_Y_OFFSET, 0, this);
-    connect(pauseButton, &QPushButton::clicked, this, &MainWindow::pauseGame);
-    scoreboard = new ScoreBoard();
-    scoreboard->setScore(0);
-    scene->addItem(scoreboard);
 }
 
 void MainWindow::createMap(QGraphicsScene* scene) {
@@ -109,31 +120,7 @@ void MainWindow::createMap(QGraphicsScene* scene) {
         }
     }
 
-    int y_top = Y_OFFSET - BLOCK_INTERVAL;
-    int y_bottom = Y_OFFSET + NUM_VERTICAL_BLOCKS * BLOCK_INTERVAL;
-    int x_top = X_OFFSET - BLOCK_INTERVAL;
-    int x_bottom = X_OFFSET + NUM_HORIZONTAL_BLOCKS * BLOCK_INTERVAL;
-    for (int i = -1; i <= NUM_HORIZONTAL_BLOCKS; i++) {
-        QGraphicsRectItem* rectItem1 = new QGraphicsRectItem(X_OFFSET + i * BLOCK_INTERVAL, y_top, BLOCK_SIZE, BLOCK_SIZE);
-        QGraphicsRectItem* rectItem2 = new QGraphicsRectItem(X_OFFSET + i * BLOCK_INTERVAL, y_bottom, BLOCK_SIZE, BLOCK_SIZE);
-        QBrush brush(QColor(255, 255, 255, 128));  // 设置白色的半透明颜色
-        rectItem1->setBrush(brush);
-        rectItem2->setBrush(brush);
-
-        scene->addItem(rectItem1);
-        scene->addItem(rectItem2);
-    }
-
-    for (int i = 0; i < NUM_VERTICAL_BLOCKS; i++) {
-        QGraphicsRectItem* rectItem1 = new QGraphicsRectItem(x_top, Y_OFFSET + i * BLOCK_INTERVAL, BLOCK_SIZE, BLOCK_SIZE);
-        QGraphicsRectItem* rectItem2 = new QGraphicsRectItem(x_bottom, Y_OFFSET + i * BLOCK_INTERVAL, BLOCK_SIZE, BLOCK_SIZE);
-        QBrush brush(QColor(255, 255, 255, 128));  // 设置白色的半透明颜色
-        rectItem1->setBrush(brush);
-        rectItem2->setBrush(brush);
-
-        scene->addItem(rectItem1);
-        scene->addItem(rectItem2);
-    }
+    createMapBound();
 
     for (int i = 0; i < NUM_HORIZONTAL_BLOCKS; i++) {
         for (int j = 0; j < NUM_VERTICAL_BLOCKS; j++) {
@@ -148,6 +135,10 @@ void MainWindow::createMap(QGraphicsScene* scene) {
 
 void MainWindow::keyPressEvent(QKeyEvent *event) {
     if (isPaused) return;
+    if (isSaved) {
+        isSaved = false;
+        saveButton->toggleImage();
+    }
 //    std::cout<<"here1"<<std::endl;
     // 获取Character位置
     int x_pos, y_pos;
@@ -665,6 +656,7 @@ void MainWindow::pauseGame() {
     else bgm->stop();
     isPaused = !isPaused;
     countDownClock->toggleCountDown();
+    pauseButton->toggleImage();
 }
 
 void MainWindow::createProps(QGraphicsScene* scene) {
@@ -707,5 +699,164 @@ void MainWindow::createProps(QGraphicsScene* scene) {
 //       for (Prop* prop : props) {
 //           std::cout << "Prop x: " << prop->getX() << ", y: " << prop->getY() << ", type: " << prop->getType() << std::endl;
 //       }
+
+}
+
+void MainWindow::saveGame() {
+    std::ofstream file(savePath); // 创建文件，并指定路径和文件名
+
+    if (file.is_open()) // 检查文件是否成功打开
+    {
+        file.seekp(0, std::ios::beg); // 将写入位置设置为文件开头
+
+        // 输出一系列信息到文件
+//        file << 0 << " //单人模式"<< std::endl;
+//        file << character->getX() << " " <<character->getY() << " //角色位置"<< std::endl;
+//        file << seconds << " //时间" << std::endl;
+//        file << residue << " //剩余方块个数" << std::endl;
+//        file << isPaused << " //是否暂停" << std::endl;
+        file << 0 << std::endl;
+        file << character->getX() << " " <<character->getY() << std::endl;
+        file << seconds << std::endl;
+        file << residue << std::endl;
+        file << isPaused << std::endl;
+
+        file << "props：x y type" << std::endl;
+        if (!props.empty()) {
+            for (Prop* prop : props) {
+                file << prop->getX() << " " << prop->getY() << " " << prop->getType() << std::endl;
+            }
+        }
+
+        file << "blocks：x y type" << std::endl;
+        if (residue > 0) {
+            for (int i = 0; i < NUM_HORIZONTAL_BLOCKS; i++) {
+                for (int j = 0; j < NUM_VERTICAL_BLOCKS; j++) {
+                    if (blockMap[i][j])  file << blockMap[i][j]->getX() << " "  << blockMap[i][j]->getY() << " "  << blockMap[i][j]->getType() << std::endl;
+                }
+            }
+        }
+
+        file << "linkPair：x y" << std::endl;
+        if (linkPair[0]) file << linkPair[0]->getX() << " "  << linkPair[0]->getY() << std::endl;
+        if (linkPair[1]) file << linkPair[1]->getY() << " "  << linkPair[1]->getY() << std::endl;
+
+        file.close(); // 关闭文件
+        saveButton->toggleImage();
+        isSaved = true;
+    }
+    else
+    {
+        // 文件打开失败，处理错误
+    }
+}
+
+void MainWindow::loadGame() {
+    std::ifstream file(savePath); // 打开文件，并指定路径和文件名
+
+    if (!file) {
+        std::cout << "Failed to open the file." << std::endl;
+        return;
+    }
+
+    int mode;
+    file >> mode;
+    if (mode != 0) {
+        file.close();
+        return;
+    }
+
+    createMapBound();
+
+    int x, y, type;
+    file >> x >> y;
+    character = new Character(nullptr, x, y, CHARACTER1_TYPE);
+    scene->addItem(character);
+
+    file >> this->seconds;
+    std::cout << "seconds: " << this->seconds << std::endl;
+    file >> this->residue;
+    std::cout << "residue: " << this->residue << std::endl;
+    file >> this->isPaused;
+    std::cout << "isPaused: " << this->isPaused << std::endl;
+
+    std::string line;
+    std::getline(file, line);
+    while(file >> x >> y >> type) {
+        Prop *prop = new Prop(x, y, type);
+        props.push_back(prop);
+        scene->addItem(prop);
+    }
+
+    std::getline(file, line);
+    blockMap.resize(NUM_HORIZONTAL_BLOCKS, std::vector<Block*>(NUM_VERTICAL_BLOCKS, nullptr));
+
+    while(file >> x >> y >> type) {
+        blockMap[x][y] = new Block(x, y, type);
+        scene->addItem(blockMap[x][y]);
+    }
+
+    nearBlocks(character->getX(), character->getY());
+
+    std::getline(file, line);
+    if (file >> x >> y) {
+        linkPair[0] = blockMap[x][y];
+        linkPair[0]->select();
+    }
+    if (file >> x >> y) {
+        linkPair[1] = blockMap[x][y];
+        linkPair[1]->select();
+    }
+
+
+
+    isSaved = true;
+
+    timer = new QTimer(this);
+    connect(timer, &QTimer::timeout, this, &MainWindow::updateSeconds);
+    timer->start(1000); // 每隔1秒触发一次计时器
+
+    pauseButton = new Button(BUTTON_X_OFFSET, BUTTON_Y_OFFSET, 0, this);
+    connect(pauseButton, &QPushButton::clicked, this, &MainWindow::pauseGame);
+
+    saveButton = new Button(BUTTON_X_OFFSET, BUTTON_Y_OFFSET + 200, 1, this);
+    connect(saveButton, &QPushButton::clicked, this, &MainWindow::saveGame);
+    saveButton->toggleImage();
+
+    countDownClock = new CountDownClock(this);
+    connect(countDownClock, SIGNAL(countdownFinished()), this, SLOT(this->handleCountdownFinished()));
+    countDownClock->setTime(seconds);
+
+    scoreboard = new ScoreBoard();
+    scoreboard->setScore(NUM_HORIZONTAL_BLOCKS * NUM_VERTICAL_BLOCKS - residue);
+    scene->addItem(scoreboard);
+}
+
+void MainWindow::createMapBound() {
+    int y_top = Y_OFFSET - BLOCK_INTERVAL;
+    int y_bottom = Y_OFFSET + NUM_VERTICAL_BLOCKS * BLOCK_INTERVAL;
+    int x_top = X_OFFSET - BLOCK_INTERVAL;
+    int x_bottom = X_OFFSET + NUM_HORIZONTAL_BLOCKS * BLOCK_INTERVAL;
+    for (int i = -1; i <= NUM_HORIZONTAL_BLOCKS; i++) {
+        QGraphicsRectItem* rectItem1 = new QGraphicsRectItem(X_OFFSET + i * BLOCK_INTERVAL, y_top, BLOCK_SIZE, BLOCK_SIZE);
+        QGraphicsRectItem* rectItem2 = new QGraphicsRectItem(X_OFFSET + i * BLOCK_INTERVAL, y_bottom, BLOCK_SIZE, BLOCK_SIZE);
+        QBrush brush(QColor(255, 255, 255, 128));  // 设置白色的半透明颜色
+        rectItem1->setBrush(brush);
+        rectItem2->setBrush(brush);
+
+        scene->addItem(rectItem1);
+        scene->addItem(rectItem2);
+    }
+
+    for (int i = 0; i < NUM_VERTICAL_BLOCKS; i++) {
+        QGraphicsRectItem* rectItem1 = new QGraphicsRectItem(x_top, Y_OFFSET + i * BLOCK_INTERVAL, BLOCK_SIZE, BLOCK_SIZE);
+        QGraphicsRectItem* rectItem2 = new QGraphicsRectItem(x_bottom, Y_OFFSET + i * BLOCK_INTERVAL, BLOCK_SIZE, BLOCK_SIZE);
+        QBrush brush(QColor(255, 255, 255, 128));  // 设置白色的半透明颜色
+        rectItem1->setBrush(brush);
+        rectItem2->setBrush(brush);
+
+        scene->addItem(rectItem1);
+        scene->addItem(rectItem2);
+    }
 
 }

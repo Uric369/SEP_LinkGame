@@ -8,7 +8,7 @@ Button::Button(int x, int y, int type, QWidget *parent)
     image1Path = image_before[type];
     image2Path = image_after[type];
     setImage(image1Path);
-    connect(this, &QPushButton::clicked, this, &Button::toggleImage);
+//    connect(this, &QPushButton::clicked, this, &Button::toggleImage);
 
     // 设置按钮的样式表，将背景设置为透明，并在鼠标悬停时放大图标
     setStyleSheet("QPushButton { background-color: transparent; border: none; } \

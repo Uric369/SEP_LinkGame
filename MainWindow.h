@@ -25,11 +25,11 @@
 #include <vector>
 #include <cstdlib>
 #include "Prop.h"
-
+#include <fstream>
 
 class MainWindow : public QGraphicsView {
 public:
-    MainWindow(QWidget* parent = nullptr);
+    MainWindow(QWidget* parent = nullptr, bool isResume = false);
 
 private slots:
     void handleCountdownFinished();
@@ -47,13 +47,18 @@ private:
     QTimer *timer;
     ScoreBoard* scoreboard;
     Button *pauseButton;
+    Button *saveButton;
     int seconds;
     int residue;
     bool isPaused;
+    bool isSaved;
     void updateSeconds();
 
     void createMap(QGraphicsScene* scene);
+    void createCharacter(QGraphicsScene* scene);
     void createProps(QGraphicsScene* scene);
+    void createComponents();
+    void createMapBound();
 
     void keyPressEvent(QKeyEvent *event);
     bool isSelect(int x, int y, QKeyEvent *event);

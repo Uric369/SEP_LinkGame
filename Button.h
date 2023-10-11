@@ -6,7 +6,7 @@
 
 const QString image_before[6] = {
     ":/Button/image/button/pause.png",
-    ":/Button/image/button/pause.png",
+    ":/Button/image/button/save.png",
     ":/Button/image/button/danren.png",
     ":/Button/image/button/shuangren.png",
     ":/Button/image/button/load.png",
@@ -15,7 +15,7 @@ const QString image_before[6] = {
 
 const QString image_after[6] = {
     ":/Button/image/button/restart.png",
-    ":/Button/image/button/restart.png",
+    ":/Button/image/button/save_done.png",
     ":/Button/image/button/danren.png",
     ":/Button/image/button/shuangren.png",
     ":/Button/image/button/load.png",
@@ -29,7 +29,7 @@ class Button : public QPushButton
 public:
     Button(int x, int y, int type, QWidget *parent = nullptr);
 
-private slots:
+//private slots:
     void toggleImage();
 
 private:

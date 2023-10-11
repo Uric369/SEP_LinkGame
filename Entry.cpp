@@ -56,7 +56,7 @@ void Entry::twoPlayerMode() {
 
 void Entry::loadGameMode() {
     bgm->stop();
-    MainWindow_m *m = new MainWindow_m();
+    MainWindow *m = new MainWindow(nullptr, true);
     m->show();
     this->hide();
 }

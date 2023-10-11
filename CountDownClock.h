@@ -15,6 +15,7 @@ public:
     void toggleCountDown();
     void stopCountDown();
     void addTime();
+    void setTime(int seconds);
 
 protected:
     void paintEvent(QPaintEvent *event) override;

@@ -73,6 +73,8 @@
         <file>image/button/exit.png</file>
         <file>image/button/load.png</file>
         <file>image/button/shuangren.png</file>
+        <file>image/button/save.png</file>
+        <file>image/button/save_done.png</file>
     </qresource>
     <qresource prefix="/Prop">
         <file>image/props/+1s.PNG</file>

@@ -44,6 +44,6 @@ extern const int ENTRY_BUTTON_Y_OFFEST;
 
 extern const QString characterImages[2];
 
-extern const QString savePath;
+extern const std::string savePath;
 
 #endif // CONFIG_H

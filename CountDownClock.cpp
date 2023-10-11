@@ -72,3 +72,7 @@ void CountDownClock::stopCountDown() {
 void CountDownClock::addTime() {
     this->seconds -= ADD_TIME;
 }
+
+void CountDownClock::setTime(int seconds) {
+    this->seconds = seconds;
+}
