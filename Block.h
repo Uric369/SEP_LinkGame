@@ -42,10 +42,24 @@ const QString images_near[10] = {
     ":/Block_near/image/blocks_near/strawberry.PNG"
 };
 
+const QString images_select[10] = {
+    ":/Block_select/image/blocks_select/banana.GIF",
+    ":/Block_select/image/blocks_select/cherry.GIF",
+    ":/Block_select/image/blocks_select/eggplant.GIF",
+    ":/Block_select/image/blocks_select/grape.GIF",
+    ":/Block_select/image/blocks_select/greenApple.GIF",
+    ":/Block_select/image/blocks_select/mango.GIF",
+    ":/Block_select/image/blocks_select/pear.gif",
+    ":/Block_select/image/blocks_select/pineapple.GIF",
+    ":/Block_select/image/blocks_select/raspberry.GIF",
+    ":/Block_select/image/blocks_select/strawberry.gif",
+};
+
+
 enum State {
-    normal,
-    near,
-    selected
+    normal, //正常状态
+    near, //靠近状态
+    selected //选中状态
 };
 
 class Block : public QGraphicsPixmapItem {
@@ -60,14 +74,15 @@ public:
     int getType();
     int getX();
     int getY();
+    void setType(int type);
     void setNewPos(int x, int y);
 
 private:
     int x, y;
     int type;
-    bool isMultiPlayer;
+    bool isMultiPlayer; //是否为双人模式
     State state;
-    QGraphicsProxyWidget* proxyWidget;
+    QGraphicsProxyWidget* proxyWidget; //用于显示选中状态下的动图
 };
 
 #endif // BLOCK_H

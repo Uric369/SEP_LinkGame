@@ -1,7 +1,6 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QApplication>
 #include <QDesktopWidget>
 #include <QGraphicsScene>
 #include <QGraphicsView>
@@ -26,10 +25,39 @@
 #include <cstdlib>
 #include "Prop.h"
 #include <fstream>
+#include <sstream>
 
 class MainWindow : public QGraphicsView {
 public:
     MainWindow(QWidget* parent = nullptr, bool isResume = false);
+    bool isSelectTest(int row, int col, QKeyEvent* event)
+    {
+        return isSelect(row, col, event);
+    }
+    void setBlockInMap(int row, int col, Block* block)
+    {
+        blockMap[row][col] = block;
+    }
+
+    Block* getBlockFromMap(int row, int col) const
+    {
+        return blockMap[row][col];
+    }
+    void setLinkPair(int index, Block* block)
+    {
+        block->near();
+        block->select();
+        linkPair[index] = block;
+    }
+
+    Block* getLinkPair(int index) const
+    {
+        return linkPair[index];
+    }
+    bool isLinkableTest()
+    {
+            return isLinkable();
+    }
 
 private slots:
     void handleCountdownFinished();

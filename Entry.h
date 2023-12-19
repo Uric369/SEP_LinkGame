@@ -29,7 +29,8 @@ private:
     void twoPlayerMode();
     void loadGameMode();
     void exit();
-
+    void loadGameMode_single();
+    void loadGameMode_multi();
 };
 
 #endif // ENTRY_H

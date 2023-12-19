@@ -42,9 +42,17 @@
     </qresource>
     <qresource prefix="/Block_select">
         <file>image/blocks_select/GIF.gif</file>
-        <file>image/blocks_select/pear.gif</file>
-        <file>image/blocks_select/pear2.gif</file>
         <file>image/blocks_select/strawberry.gif</file>
+        <file>image/blocks_select/banana.GIF</file>
+        <file>image/blocks_select/cherry.GIF</file>
+        <file>image/blocks_select/eggplant.GIF</file>
+        <file>image/blocks_select/grape.GIF</file>
+        <file>image/blocks_select/greenApple.GIF</file>
+        <file>image/blocks_select/mango.GIF</file>
+        <file>image/blocks_select/pineapple.GIF</file>
+        <file>image/blocks_select/raspberry.GIF</file>
+        <file>image/blocks_select/redApple.GIF</file>
+        <file>image/blocks_select/pear.gif</file>
     </qresource>
     <qresource prefix="/Effect">
         <file>image/effect/explode.gif</file>

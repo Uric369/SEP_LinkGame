@@ -49,14 +49,36 @@ void Entry::singlePlayerMode() {
 
 void Entry::twoPlayerMode() {
     bgm->stop();
+
     MainWindow_m *m = new MainWindow_m();
     m->show();
     this->hide();
 }
 
 void Entry::loadGameMode() {
+    std::ifstream file(savePath); // 打开文件，并指定路径和文件名
+
+    if (!file) {
+        std::cout << "Failed to open the file." << std::endl;
+        return;
+    }
+
+    int mode;
+    file >> mode;
+
     bgm->stop();
+    if (mode == 0) loadGameMode_single();
+    else loadGameMode_multi();
+}
+
+void Entry::loadGameMode_single() {
     MainWindow *m = new MainWindow(nullptr, true);
+    m->show();
+    this->hide();
+}
+
+void Entry::loadGameMode_multi() {
+    MainWindow_m *m = new MainWindow_m(nullptr, true);
     m->show();
     this->hide();
 }

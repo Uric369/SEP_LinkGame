@@ -1,8 +1,16 @@
 #include "MainWindow.h"
 
+/*
+ * MainWindow: 初始化MainWindow
+ * args
+ *     parent: 横坐标
+ *     isResume: 是否载入游戏
+ */
 MainWindow::MainWindow(QWidget* parent, bool isResume) : QGraphicsView(parent) {
+    // 设置窗口标题
     setWindowTitle("Main Window");
 
+    // 设置窗口大小
     QDesktopWidget *desktop = QApplication::desktop();
     int screenWidth = desktop->width();
     int screenHeight = desktop->height();
@@ -18,19 +26,22 @@ MainWindow::MainWindow(QWidget* parent, bool isResume) : QGraphicsView(parent) {
     scene->setBackgroundBrush(background);
     scene->setSceneRect(0, 0, screenWidth, screenHeight);
 
+    // 播放bgm
     bgm = new QSoundEffect(this);
     bgm->setLoopCount(QSoundEffect::Infinite); // 设置为无限循环
     bgm->setSource(QUrl::fromLocalFile(":/Sound/sounds/bgm.wav"));
     bgm->play();
 
+    // 创建特效
     effect = new Effect(this);
 
+    // 如果是载入游戏，读取文件并初始化
     if (isResume) loadGame();
     else {
-    //生成所有方块
-    createMap(scene);
-    createCharacter(scene);
-    createComponents();}
+    createMap(scene);     //生成所有方块
+    createCharacter(scene);    //生成角色
+    createComponents();    //生成零件（按钮计分板等）
+    }
 
     // 将场景设置到视图中
     setScene(scene);
@@ -39,7 +50,11 @@ MainWindow::MainWindow(QWidget* parent, bool isResume) : QGraphicsView(parent) {
     setFocus();
 }
 
+/*
+ * createComponents: 生成零件
+ */
 void MainWindow::createComponents() {
+    // 初始化参数
     residue = NUM_HORIZONTAL_BLOCKS * NUM_VERTICAL_BLOCKS;
     seconds = 0;
     isPaused = false;
@@ -47,45 +62,58 @@ void MainWindow::createComponents() {
     linkPair[0] = nullptr;
     linkPair[1] = nullptr;
 
+    // 启动计时器
     timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::updateSeconds);
     timer->start(1000); // 每隔1秒触发一次计时器
 
+    // 创建暂停按钮
     pauseButton = new Button(BUTTON_X_OFFSET, BUTTON_Y_OFFSET, 0, this);
     connect(pauseButton, &QPushButton::clicked, this, &MainWindow::pauseGame);
 
+    // 创建存档按钮
     saveButton = new Button(BUTTON_X_OFFSET, BUTTON_Y_OFFSET + 200, 1, this);
     connect(saveButton, &QPushButton::clicked, this, &MainWindow::saveGame);
 
+    // 创建倒计时
     countDownClock = new CountDownClock(this);
     connect(countDownClock, SIGNAL(countdownFinished()), this, SLOT(this->handleCountdownFinished()));
 
+    // 创建计分板
     scoreboard = new ScoreBoard();
     scoreboard->setScore(0);
     scene->addItem(scoreboard);
 }
 
+/*
+ * createCharacter: 创建角色
+ * args
+ *     scene: 当前窗口场景
+ */
 void MainWindow::createCharacter(QGraphicsScene* scene) {
     // 创建角色
     srand(static_cast<unsigned>(time(0)));
+    // 随机角色位置
     int seed1 = rand() % 4;
     if (seed1 == 0 || seed1 == 2) {
         int seed2 = rand() % (NUM_VERTICAL_BLOCKS + 2);
         if (seed1 == 0) character = new Character(nullptr, -1, seed2 - 1, CHARACTER1_TYPE);
         if (seed1 == 2) character = new Character(nullptr, NUM_HORIZONTAL_BLOCKS, seed2 - 1, CHARACTER1_TYPE);
-//        std::cout<<"seeeeeeeeeeed1"<<seed1<<std::endl;
-//        std::cout<<"seeeeeeeeeeed2"<<seed2<<std::endl;
     }
     if (seed1 == 1 || seed1 == 3) {
         int seed2 = rand() % (NUM_HORIZONTAL_BLOCKS + 2);
         if (seed1 == 1) character = new Character(nullptr, seed2 - 1, -1, CHARACTER1_TYPE);
         if (seed1 == 3) character = new Character(nullptr, seed2 - 1, NUM_VERTICAL_BLOCKS, CHARACTER1_TYPE);
-//        std::cout<<"seeeeeeeeeeed1"<<seed1<<std::endl;
-//        std::cout<<"seeeeeeeeeeed2"<<seed2<<std::endl;
     }
+    // 添加角色至场景
     scene->addItem(character);
 }
 
+/*
+ * createMap: 创建block地图
+ * args
+ *     scene: 当前窗口场景
+ */
 void MainWindow::createMap(QGraphicsScene* scene) {
     // 生成有序的typeMap
     int typeMap[NUM_HORIZONTAL_BLOCKS][NUM_VERTICAL_BLOCKS];
@@ -133,33 +161,49 @@ void MainWindow::createMap(QGraphicsScene* scene) {
 
 }
 
+/*
+ * keyPressEvent: 处理键盘输入
+ * args
+ *     event：键盘事件
+ */
 void MainWindow::keyPressEvent(QKeyEvent *event) {
+    // 如果暂停，则直接返回
     if (isPaused) return;
+
+    // 如果已存当，恢复为未存档状态
     if (isSaved) {
         isSaved = false;
         saveButton->toggleImage();
     }
-//    std::cout<<"here1"<<std::endl;
+
     // 获取Character位置
     int x_pos, y_pos;
 
     x_pos = character->getX();
     y_pos = character->getY();
 
+    // 判断角色在(x_pos, y_pos)位置，键盘输入为event的情况下，是否有选中block的动作
     if (!isSelect(x_pos, y_pos, event)) {
+        // 还原当前时刻被选中的block
         resetBlocks(x_pos, y_pos);
 
         character->keyPressEvent(event);
-//        std::cout<<"here2"<<std::endl;
 
         x_pos = character->getX();
         y_pos = character->getY();
+        // 处理被角色靠近的方块
         nearBlocks(x_pos, y_pos);
     }
-    std::cout<<"here1"<<std::endl;
+    // 触发道具
     triggerProp(x_pos, y_pos);
 }
 
+/*
+ * keyPressEvent: 处理键盘输入
+ * args
+ *     x：当前角色横坐标
+ *     y：当前角色纵坐标
+ */
 void MainWindow::triggerProp(int x, int y) {
     if(props.empty()) {
         return; // Return immediately if props is uninitialized or empty
@@ -173,6 +217,7 @@ void MainWindow::triggerProp(int x, int y) {
 //            blockMap[x][y]->hide();
 //            delete blockMap[x][y];
 //            blockMap[x][y] = nullptr;
+            // 触发不同的道具效果
             switch (prop->getType()) {
                 case 0: seconds -= ADD_TIME;
                 countDownClock->addTime();
@@ -186,6 +231,8 @@ void MainWindow::triggerProp(int x, int y) {
                 //case 3: flash(); break;
                 default: break;
             }
+            // 显示触发道具特效
+            // 0.3秒后再从scene中删掉道具
             prop->trigger();
             QTimer::singleShot(300, [=]() {
                 scene->removeItem(prop);
@@ -197,6 +244,9 @@ void MainWindow::triggerProp(int x, int y) {
     }
 }
 
+/*
+ * Shuffle: 打乱方块
+ */
 void MainWindow::shuffle() {
     // 打乱typeMap
     srand(static_cast<unsigned>(time(0))); // 在合适位置种下随机数种子
@@ -240,12 +290,18 @@ void MainWindow::shuffle() {
     }
 }
 
+/*
+ * hint：提示10s并自动消去方块
+ */
 void MainWindow::hint() {
     QTimer *hintTimer = new QTimer(this);
     connect(hintTimer, &QTimer::timeout, this, &MainWindow::findLinkPair_certainAmount);
     hintTimer->start(2000);  // 每隔1秒触发一次timeout信号
 }
 
+/*
+ * findLinkPair_certainAmount：hint的辅助函数
+ */
 void MainWindow::findLinkPair_certainAmount() {
     std::cout<<"findLinkPair_certainAmount"<<std::endl;
     static int count = 0;
@@ -256,7 +312,12 @@ void MainWindow::findLinkPair_certainAmount() {
     }
 }
 
-//isLink:找到之后要不要消除
+
+/*
+ * findLinkPair: 寻找可以消除的方块对
+ * args
+ *     isLink：找到之后是否消除。判断游戏是否结束调用findLinkPair时设置isLink是false
+ */
 bool MainWindow::findLinkPair(bool isLink) {
     std::cout<<"findLinkPair"<<std::endl;
     for (int i = 0; i < NUM_VERTICAL_BLOCKS * NUM_HORIZONTAL_BLOCKS; i++) {
@@ -267,6 +328,7 @@ bool MainWindow::findLinkPair(bool isLink) {
         for (int j = i + 1; j < NUM_VERTICAL_BLOCKS * NUM_HORIZONTAL_BLOCKS; j++) {
             std::cout<<"check j ("<<j % NUM_HORIZONTAL_BLOCKS<<", "<<j / NUM_HORIZONTAL_BLOCKS<<")";
             if (isLinkable(i % NUM_HORIZONTAL_BLOCKS, i / NUM_HORIZONTAL_BLOCKS, j % NUM_HORIZONTAL_BLOCKS, j / NUM_HORIZONTAL_BLOCKS)) {
+                // 如果无需link，直接返回true
                 if (!isLink) return true;
                 int x2 = j % NUM_HORIZONTAL_BLOCKS;
                 int y2 = j / NUM_HORIZONTAL_BLOCKS;
@@ -298,6 +360,14 @@ bool MainWindow::findLinkPair(bool isLink) {
     return false;
 }
 
+/*
+ * isSelect: 判断select是否被触发
+ * args
+ *     x， y：character当前的位置
+ *     event：键盘动作
+ * return
+ *     0，未触发；1，触发
+ */
 bool MainWindow::isSelect(int x, int y, QKeyEvent *event) {
     switch (event->key()) {
         case Qt::Key_W:
@@ -342,6 +412,11 @@ bool MainWindow::isSelect(int x, int y, QKeyEvent *event) {
     return false;
 }
 
+/*
+ * resetBlocks: 重置character周围的block
+ * args
+ *     x， y：character当前的位置
+ */
 void MainWindow::resetBlocks(int x, int y) {
     if ((x == -1 && y == -1) ||
     (x == -1 && y == NUM_VERTICAL_BLOCKS) ||
@@ -354,11 +429,22 @@ void MainWindow::resetBlocks(int x, int y) {
     resetBlock(x, y - 1);
 }
 
+/*
+ * resetBlocks: 重置单个block
+ * args
+ *     x， y：block的位置
+ */
 void MainWindow::resetBlock(int x, int y) {
     if (x >= 0 && x < NUM_HORIZONTAL_BLOCKS && y >= 0 && y < NUM_VERTICAL_BLOCKS && blockMap[x][y])
         blockMap[x][y]->reset();
 }
 
+
+/*
+ * nearBlocks: 设置character周围为靠近状态
+ * args
+ *     x， y：character当前的位置
+ */
 void MainWindow::nearBlocks(int x,int y) {
     if ((x == -1 && y == -1) ||
     (x == -1 && y == NUM_VERTICAL_BLOCKS) ||
@@ -371,12 +457,23 @@ void MainWindow::nearBlocks(int x,int y) {
     nearBlock(x, y - 1);
 }
 
+/*
+ * nearBlock: 靠近单个block
+ * args
+ *     x， y：block的位置
+ */
 void MainWindow::nearBlock(int x, int y) {
     if (x >= 0 && x < NUM_HORIZONTAL_BLOCKS && y >= 0 && y <NUM_VERTICAL_BLOCKS && blockMap[x][y])
         blockMap[x][y]->near();
 }
 
+/*
+ * linkBlock: 链接block
+ * args
+ *     x， y：block的位置
+ */
 void MainWindow::linkBlock(int x, int y) {
+    //  如果之前未选择block，直接返回
     if (linkPair[0] == nullptr) {
         linkPair[0] = blockMap[x][y];
         return;
@@ -425,6 +522,9 @@ void MainWindow::linkBlock(int x, int y) {
     }
 }
 
+/*
+ * linkEffect: 显示link特效
+ */
 void MainWindow::linkEffect() {
     if (linkPath.size() < 2) {
         // 链接路径上的点不足两个，无法绘制直线
@@ -445,6 +545,9 @@ void MainWindow::linkEffect() {
     }
 }
 
+/*
+ * eraselinkEffect: 擦除link特效
+ */
 void MainWindow::eraseLinkEffect() {
     QList<QGraphicsItem*> items = scene->items();
 
@@ -456,7 +559,13 @@ void MainWindow::eraseLinkEffect() {
     }
 }
 
+/*
+ * isLinkable:判断当前linkPair里面的block是否可以被链接
+ * return
+ *  0，不可以；1，可以
+ */
 bool MainWindow::isLinkable() {
+    if (linkPair[0] == nullptr || linkPair[1] == nullptr) return false;
     if (linkPair[0]->getType() != linkPair[1]->getType()) return false;
 
     int x1 = linkPair[0]->getX();
@@ -471,6 +580,14 @@ bool MainWindow::isLinkable() {
     return false;
 }
 
+/*
+ * isLinkable:判断当前坐标为(x1, y1)和(x2, y2)的block是否可以被链接
+ * args
+ *     x1, y1:第一个block的坐标
+ *     x2, y2:第二个block的坐标
+ * return
+ *     0，不可以；1，可以
+ */
 bool MainWindow::isLinkable(int x1, int y1, int x2, int y2) {
     std::cout<<"isLinkable?"<<x1<<", "<<y1<<"; "<<x2<<", "<<y2<<std::endl;
     if (!blockMap[x1][y1] || !blockMap[x2][y2] || blockMap[x1][y1]->getType() != blockMap[x2][y2]->getType()) {
@@ -489,6 +606,16 @@ bool MainWindow::isLinkable(int x1, int y1, int x2, int y2) {
     return false;
 }
 
+/*
+ * isLinkable_zeroAngle:判断当前坐标为(x1, y1)和(x2, y2)的block是否可以被直线链接
+ * args
+ *     x1, y1:第一个block的坐标
+ *     x2, y2:第二个block的坐标
+ *     isDirect: 是否直接修改linkPair
+ *     examEndPoint: 是否检查结束点
+ * return
+ *     0，不可以；1，可以
+ */
 bool MainWindow::isLinkable_zeroAngle(int x1, int y1, int x2, int y2, bool isDirect, bool examEndPoint) {
     if (x1 != x2 && y1 != y2) return false;
     if (examEndPoint && x2 >= 0 && x2 < NUM_HORIZONTAL_BLOCKS && y2 >= 0
@@ -537,6 +664,15 @@ bool MainWindow::isLinkable_zeroAngle(int x1, int y1, int x2, int y2, bool isDir
     return false;
 }
 
+
+/*
+ * isLinkable_oneAngle:判断当前坐标为(x1, y1)和(x2, y2)的block是否可以被一个折角的直线链接
+ * args
+ *     x1, y1:第一个block的坐标
+ *     x2, y2:第二个block的坐标
+ * return
+ *     0，不可以；1，可以
+ */
 bool MainWindow::isLinkable_oneAngle(int x1, int y1, int x2, int y2) {
     if (x1 == x2 || y1 == y2) return false;
 
@@ -563,6 +699,14 @@ bool MainWindow::isLinkable_oneAngle(int x1, int y1, int x2, int y2) {
     return false;
 }
 
+/*
+ * isLinkable_twoAngle:判断当前坐标为(x1, y1)和(x2, y2)的block是否可以被两个直角的折线链接
+ * args
+ *     x1, y1:第一个block的坐标
+ *     x2, y2:第二个block的坐标
+ * return
+ *     0，不可以；1，可以
+ */
 bool MainWindow::isLinkable_twoAngle(int x1, int y1, int x2, int y2) {
     //借道x = -1
     for (int i = -1; i <= NUM_HORIZONTAL_BLOCKS; i++) {
@@ -598,12 +742,18 @@ bool MainWindow::isLinkable_twoAngle(int x1, int y1, int x2, int y2) {
     return false;
 }
 
+/*
+ * handleCountdownFinished:倒计时结束停止bgm
+ */
 void MainWindow::handleCountdownFinished()
 {
     std::cout<<"SLOT: handleCountdownFinished"<<std::endl;
     bgm->stop();
 }
 
+/*
+ * updateSeconds: 更新时间
+ */
 void MainWindow::updateSeconds()
 {
     if (!isPaused) seconds++;
@@ -619,6 +769,9 @@ void MainWindow::updateSeconds()
     update(); // 触发重绘事件，更新界面
 }
 
+/*
+ * judger: 判断游戏是否结束/是否可解
+ */
 void MainWindow::judger() {
     if (residue == 0) {
         timer->stop();
@@ -641,6 +794,10 @@ void MainWindow::judger() {
         return;
     }
 }
+
+/*
+ * blackMask: 游戏结束黑色遮罩
+ */
 void MainWindow::blackMask() {
     int screenWidth = QApplication::desktop()->width();
     int screenHeight = QApplication::desktop()->height();
@@ -650,6 +807,9 @@ void MainWindow::blackMask() {
     scene->addItem(blackMask);
 }
 
+/*
+ * pauseGame: 暂停游戏
+ */
 void MainWindow::pauseGame() {
     if (seconds >= COUNTDOWN_TIME) return;
     if (isPaused) bgm->play();
@@ -659,6 +819,9 @@ void MainWindow::pauseGame() {
     pauseButton->toggleImage();
 }
 
+/*
+ * createProps: 创建props
+ */
 void MainWindow::createProps(QGraphicsScene* scene) {
        std::srand(std::time(0)); // 使用时间作为随机数种子
        // 将空位置存入一个容器
@@ -702,6 +865,9 @@ void MainWindow::createProps(QGraphicsScene* scene) {
 
 }
 
+/*
+ * saveGame: 存档游戏
+ */
 void MainWindow::saveGame() {
     std::ofstream file(savePath); // 创建文件，并指定路径和文件名
 
@@ -721,14 +887,14 @@ void MainWindow::saveGame() {
         file << residue << std::endl;
         file << isPaused << std::endl;
 
-        file << "props：x y type" << std::endl;
+        file << "props:x y type" << std::endl;
         if (!props.empty()) {
             for (Prop* prop : props) {
                 file << prop->getX() << " " << prop->getY() << " " << prop->getType() << std::endl;
             }
         }
 
-        file << "blocks：x y type" << std::endl;
+        file << "blocks:x y type" << std::endl;
         if (residue > 0) {
             for (int i = 0; i < NUM_HORIZONTAL_BLOCKS; i++) {
                 for (int j = 0; j < NUM_VERTICAL_BLOCKS; j++) {
@@ -737,7 +903,7 @@ void MainWindow::saveGame() {
             }
         }
 
-        file << "linkPair：x y" << std::endl;
+        file << "linkPair:x y" << std::endl;
         if (linkPair[0]) file << linkPair[0]->getX() << " "  << linkPair[0]->getY() << std::endl;
         if (linkPair[1]) file << linkPair[1]->getY() << " "  << linkPair[1]->getY() << std::endl;
 
@@ -751,6 +917,9 @@ void MainWindow::saveGame() {
     }
 }
 
+/*
+ * loadGame: 载入游戏
+ */
 void MainWindow::loadGame() {
     std::ifstream file(savePath); // 打开文件，并指定路径和文件名
 
@@ -761,15 +930,18 @@ void MainWindow::loadGame() {
 
     int mode;
     file >> mode;
+    std::cout << "mode: " << mode << std::endl;
     if (mode != 0) {
+        std::cout << "MODE DOESN'T MATCH" << mode << std::endl;
         file.close();
         return;
     }
 
     createMapBound();
 
-    int x, y, type;
+    int x, y;
     file >> x >> y;
+    std::cout << "x y: " << x << " " << y << std::endl;
     character = new Character(nullptr, x, y, CHARACTER1_TYPE);
     scene->addItem(character);
 
@@ -782,33 +954,67 @@ void MainWindow::loadGame() {
 
     std::string line;
     std::getline(file, line);
-    while(file >> x >> y >> type) {
-        Prop *prop = new Prop(x, y, type);
-        props.push_back(prop);
-        scene->addItem(prop);
-    }
+    std::cout << "SKIPLINE: " << line << std::endl;
+    while (std::getline(file, line)) {
+        std::cout << "props: " << line << std::endl;
+                std::istringstream iss(line);
+                int type;
+                if (iss >> x >> y >> type) {
+                    // 在这里使用 x 和 y 进行相应的操作
+                    std::cout << "x: " << x << ", y: " << y << ", type: " << type << std::endl;
+                    Prop *prop = new Prop(x, y, type);
+                    props.push_back(prop);
+                    scene->addItem(prop);
+                } else {
+                    // 处理无效的输入行
+                    std::cout << "无效的输入行: " << line << std::endl;
+                    break;
+                }
+            }
 
     std::getline(file, line);
+    std::cout << "SKIPLINE: " << line << std::endl;
     blockMap.resize(NUM_HORIZONTAL_BLOCKS, std::vector<Block*>(NUM_VERTICAL_BLOCKS, nullptr));
 
-    while(file >> x >> y >> type) {
-        blockMap[x][y] = new Block(x, y, type);
-        scene->addItem(blockMap[x][y]);
-    }
+    while (std::getline(file, line)) {
+        std::cout << "blocks: " << line << std::endl;
+                std::istringstream iss(line);
+                int type;
+                if (iss >> x >> y >> type) {
+                    // 在这里使用 x 和 y 进行相应的操作
+                    std::cout << "x: " << x << ", y: " << y << ", type: " << type << std::endl;
+                    blockMap[x][y] = new Block(x, y, type);
+                    scene->addItem(blockMap[x][y]);
+                } else {
+                    // 处理无效的输入行
+                    std::cout << "无效的输入行: " << line << std::endl;
+                    break;
+                }
+            }
 
     nearBlocks(character->getX(), character->getY());
 
+    linkPair[0] = nullptr;
+    linkPair[1] = nullptr;
+//    std::getline(file, line);
+//    std::cout << "SKIPLINE: " << line << std::endl;
     std::getline(file, line);
-    if (file >> x >> y) {
+    std::cout << "linkpair: " << line << std::endl;
+    if (!line.empty()) {
+        std::istringstream iss(line);
+        iss >> x >> y;
+        std::cout << "x: " << x << ", y: " << y << std::endl;
         linkPair[0] = blockMap[x][y];
         linkPair[0]->select();
     }
-    if (file >> x >> y) {
+    std::getline(file, line);
+    if (!line.empty()) {
+        std::istringstream iss(line);
+        iss >> x >> y;
+        std::cout << "x: " << x << ", y: " << y << std::endl;
         linkPair[1] = blockMap[x][y];
         linkPair[1]->select();
     }
-
-
 
     isSaved = true;
 
@@ -830,8 +1036,13 @@ void MainWindow::loadGame() {
     scoreboard = new ScoreBoard();
     scoreboard->setScore(NUM_HORIZONTAL_BLOCKS * NUM_VERTICAL_BLOCKS - residue);
     scene->addItem(scoreboard);
+
+    if (isPaused == 1) pauseGame();
 }
 
+/*
+ * createMapBound: 创建地图边界
+ */
 void MainWindow::createMapBound() {
     int y_top = Y_OFFSET - BLOCK_INTERVAL;
     int y_bottom = Y_OFFSET + NUM_VERTICAL_BLOCKS * BLOCK_INTERVAL;
@@ -858,5 +1069,6 @@ void MainWindow::createMapBound() {
         scene->addItem(rectItem1);
         scene->addItem(rectItem2);
     }
+
 
 }
