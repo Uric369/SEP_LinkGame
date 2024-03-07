@@ -3,9 +3,9 @@
 ### 游戏简介
 QLink 是一款基于连连看游戏的 RPG 模式。玩家需要控制角色在地图上移动，激活和消除相同种类的方块以获得分数。游戏包含单人模式和双人模式。
 
-[image](https://github.com/Uric369/SEP_LinkGame/blob/a4b3fa607f8af29dc0f3afb2bba2bcfa859aa9ff/effect_pics/1.png)
+![image](https://github.com/Uric369/SEP_LinkGame/blob/a4b3fa607f8af29dc0f3afb2bba2bcfa859aa9ff/effect_pics/1.png)
 
-[image](https://github.com/Uric369/SEP_LinkGame/blob/a4b3fa607f8af29dc0f3afb2bba2bcfa859aa9ff/effect_pics/2.png)
+![image](https://github.com/Uric369/SEP_LinkGame/blob/a4b3fa607f8af29dc0f3afb2bba2bcfa859aa9ff/effect_pics/2.png)
 
 ### 游戏功能
 1. **随机地图生成**：根据设定的规则生成不同种类的方块地图。
